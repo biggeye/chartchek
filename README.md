@@ -51,8 +51,36 @@ The primary goal of this project is to serve as a **Joint Commission/DHCS compli
 3. **Custom Facility Instances**:
    - Each user gets a unique assistant with their proprietary data layered over the shared knowledge base.
    - Facility-specific data remains secure and isolated.
+  
+# Development Framework:
 
-4. **Deployment Options**:
-   - Hosted on a cloud platform for scalability.
-   - API access for integration with existing facility management systems.
+## 1. Chatbot Development:
+**Objective: Build an interactive chatbot interface for user queries.**
+-Integrate the chatbot with the vector store / embedding database (OpenAI Assistant) to provide relevant responses.
+-Ensure the chatbot can handle a variety of queries related to compliance and documentation.
+
+## 2. Compliance Tracking and Reporting:
+**Objective: Enable tracking of compliance status and generate reports.**
+-Create features to monitor adherence to specific standards.
+-Develop reporting tools to summarize compliance status and highlight areas needing attention.
+
+## 3. Document Processing Module:
+**Objective: Develop a robust system to extract and process text from various document formats.**
+-Implement Optical Character Recognition (OCR) for text extraction from scanned documents.
+-Utilize Natural Language Processing (NLP) techniques to clean and structure the extracted text.
+
+## 4. Customization Features:
+**Objective: Allow facilities to input their specific information and policies.**
+-Develop an interface for users to upload and manage their documents.
+-Implement mechanisms to tailor responses based on facility-specific data.
+
+
+## #. Embedding and Storage (currently these requirements are satisified by OpenAI's Assistant module, which provides API access)
+**Objective: Create embeddings of the processed text for efficient retrieval.**
+-Use pre-trained language models to generate text embeddings.
+-Store embeddings in a database optimized for quick search and retrieval.
+
+
+
+
 

@@ -12,27 +12,27 @@ The primary goal of this project is to serve as a **Joint Commission/DHCS compli
 
 ## Key Features
 
-### 1. **Text Extraction and Embedding**
+### **Text Extraction and Embedding**
 - Extracts text from PDFs, manuals, policies, and other regulatory documents.
 - Embeds the extracted data into a vector database for fast, context-aware lookups.
 
-### 2. **Regulatory Knowledge Base**
+### **Regulatory Knowledge Base**
 - Preloaded with knowledge from **Joint Commission** and **DHCS** standards.
 - Enables seamless RAG lookups to answer compliance-related queries.
 
-### 3. **Custom Facility Information**
+### **Custom Facility Information**
 - Facility-specific customization for proprietary policies, procedures, and workflows.
 - Allows authenticated users to add, update, and manage internal documents.
 
-### 4. **Smart Compliance Assistance**
+### **Smart Compliance Assistance**
 - Provides detailed answers and explanations to compliance-related questions.
 - Generates summaries, documentation checklists, and actionable insights.
 
-### 5. **Authentication and Scalability**
+### **Authentication and Scalability**
 - Cloneable for each authenticated user or facility.
 - Secure storage and management of proprietary facility data.
 
-### 6. **Proactive Compliance Monitoring** *(Future Version)*
+### **Proactive Compliance Monitoring** *(Future Version)*
 - Tracks changes in regulatory standards.
 - Notifies users about updates and how they impact their facility.
 
@@ -40,15 +40,15 @@ The primary goal of this project is to serve as a **Joint Commission/DHCS compli
 
 ## Architecture Overview
 
-1. **Data Processing**:
+ **Data Processing**:
    - Text is extracted from regulatory documents (PDFs, manuals, etc.) using robust OCR and text-parsing libraries.
    - Extracted text is converted into vector embeddings for efficient querying.
 
-2. **Retrieval-Augmented Generation (RAG)**:
+ **Retrieval-Augmented Generation (RAG)**:
    - Combines OpenAI's GPT capabilities with vector database queries.
    - Ensures responses are both contextually accurate and grounded in source data.
 
-3. **Custom Facility Instances**:
+ **Custom Facility Instances**:
    - Each user gets a unique assistant with their proprietary data layered over the shared knowledge base.
    - Facility-specific data remains secure and isolated.
   

@@ -1,39 +1,11 @@
-"use client";
+import React, { useState } from "react";
 
-import { useState } from "react";
-import ChatList from "./ChatList";
-import ChatInput from "./ChatInput";
+const SubmitForm: React.FC = () => {
+    const [userMessage, setUserMessage] = useState("");
+    const [response, setResponse] = useState("");
 
-// Define the types for the messages and input
-interface Message {
-    id: string;
-    content: string;
-    sender: string;
-}
-
-interface ChatListProps {
-    messages: Message[];
-}
-
-interface ChatInputProps {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSend: () => void;
-}
-
-export default function Chat() {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState("");
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInput(e.target.value);
-    };
-
-    const handleSubmit = async () => {
-        if (!input.trim()) return;
-
-        const userMessage = input;
-        setInput("");
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
         try {
             const res = await fetch("/api/tjc", {
@@ -65,10 +37,7 @@ export default function Chat() {
                 const parsedChunk = JSON.parse(chunk);
 
                 if (parsedChunk.type === "textCreated" || parsedChunk.type === "textDelta") {
-                    setMessages((prevMessages) => [
-                        ...prevMessages,
-                        { id: Date.now().toString(), content: parsedChunk.value, sender: "assistant" }
-                    ]);
+                    setResponse((prevResponse) => prevResponse + parsedChunk.value);
                 }
             }
         } catch (error) {
@@ -77,14 +46,21 @@ export default function Chat() {
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <ChatList messages={messages} />
-            <ChatInput
-                value={input}
-                onChange={handleInputChange}
-                onSend={handleSubmit}
-            />
+        <div>
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <input
+                        type="text"
+                        value={userMessage}
+                        onChange={(e) => setUserMessage(e.target.value)}
+                    />
+                </div>
+                <button type="submit">Submit</button>
+            </form>
+            <div>{response}</div>
         </div>
     );
-}
+};
+
+export default SubmitForm;
 

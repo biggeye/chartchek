@@ -1,19 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import ChatList from "./ChatList";
+import ChatList, { Message } from "./ChatList";
 import ChatInput from "./ChatInput";
-
-// Define the types for the messages and input
-interface Message {
-    id: string;
-    content: string;
-    sender: string;
-}
-
-interface ChatListProps {
-    messages: Message[];
-}
 
 interface ChatInputProps {
     value: string;
@@ -24,6 +13,8 @@ interface ChatInputProps {
 export default function Chat() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
+    const [threadId, setThreadId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInput(e.target.value);
@@ -35,6 +26,12 @@ export default function Chat() {
         const userMessage = input;
         setInput("");
 
+        // Add user message to chat
+        setMessages(prevMessages => [
+            ...prevMessages,
+            { id: Date.now().toString(), content: userMessage, role: "user" }
+        ]);
+
         try {
             const res = await fetch("/api/tjc", {
                 method: "POST",
@@ -43,9 +40,10 @@ export default function Chat() {
                 },
                 body: JSON.stringify({
                     userMessage,
-                    threadId: "", // Add logic to handle threadId if needed
-                    userId: "", // Add logic to handle userId if needed
-                    assistantId: "" // Add logic to handle assistantId if needed
+                    threadId: threadId, // Reuse existing threadId if we have one
+                    assistantKey: "tjc", // Using tjc as default key
+                    userId: "guestUser",
+                    model: "gpt-4" // Using standard GPT-4 model
                 }),
             });
 
@@ -57,27 +55,61 @@ export default function Chat() {
             const reader = res.body?.getReader();
             const decoder = new TextDecoder();
             let done = false;
+            let currentMessage = "";
 
             while (!done && reader) {
                 const { value, done: doneReading } = await reader.read();
                 done = doneReading;
-                const chunk = decoder.decode(value, { stream: true });
-                const parsedChunk = JSON.parse(chunk);
 
-                if (parsedChunk.type === "textCreated" || parsedChunk.type === "textDelta") {
-                    setMessages((prevMessages) => [
-                        ...prevMessages,
-                        { id: Date.now().toString(), content: parsedChunk.value, sender: "assistant" }
-                    ]);
+                if (value) {
+                    const chunk = decoder.decode(value, { stream: true });
+                    // Split by newlines in case we get multiple events in one chunk
+                    const events = chunk.split('\n').filter(Boolean);
+                    
+                    for (const event of events) {
+                        try {
+                            const parsedEvent = JSON.parse(event);
+                            
+                            // Store threadId from the first message
+                            if (parsedEvent.threadId && !threadId) {
+                                setThreadId(parsedEvent.threadId);
+                            }
+
+                            if (parsedEvent.type === "textCreated") {
+                                currentMessage = parsedEvent.value;
+                                setMessages(prevMessages => [
+                                    ...prevMessages,
+                                    { id: Date.now().toString(), content: currentMessage, role: "assistant" }
+                                ]);
+                            } else if (parsedEvent.type === "textDelta") {
+                                currentMessage += parsedEvent.value;
+                                setMessages(prevMessages => {
+                                    const newMessages = [...prevMessages];
+                                    if (newMessages.length > 0) {
+                                        newMessages[newMessages.length - 1].content = currentMessage;
+                                    }
+                                    return newMessages;
+                                });
+                            }
+                        } catch (e) {
+                            console.error("Error parsing event:", e);
+                        }
+                    }
                 }
             }
         } catch (error) {
             console.error("Error sending message:", error);
+            setError("Error: Failed to send message");
+            setMessages(prevMessages => [
+                ...prevMessages,
+                { id: Date.now().toString(), content: "Error: Failed to send message", role: "system" }
+            ]);
         }
     };
 
     return (
         <div className="flex flex-col h-full">
+            {error && <div className="text-red-500">{error}</div>}
             <ChatList messages={messages} />
             <ChatInput
                 value={input}
@@ -87,4 +119,3 @@ export default function Chat() {
         </div>
     );
 }
-

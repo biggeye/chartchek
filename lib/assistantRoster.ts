@@ -1,3 +1,5 @@
+import type { AssistantCreateParams } from "openai/resources/beta/assistants";
+
 // e.g. assistant-roster.ts
 export const assistantRoster = [
     {
@@ -25,14 +27,15 @@ export const assistantRoster = [
        - Detail and Precision: Always keep your guidance precise, ensuring it reflects the most recent Joint Commission updates.
        - Limitations: If a user’s request falls outside your accreditation scope or if the standards do not explicitly address their question, clearly state any limitations or uncertainties. Avoid speculation or unverified advice.
       `,
-      tools: [{ type: "file_search" }],
+      tools: [{ type: "file_search" }] as AssistantCreateParams['tools'],
       model: "gpt-4o"
     },
     {
       key: "dhcs",
       name: "DHCS Specialist",
       instructions: "You are a specialized assistant for answering DHCS compliance questions.",
-      // ...
+      tools: [{ type: "file_search" }] as AssistantCreateParams['tools'],
+      model: "gpt-4"
     },
   ];
   

@@ -43,7 +43,7 @@ export default function Chat() {
                     threadId: threadId, // Reuse existing threadId if we have one
                     assistantKey: "tjc", // Using tjc as default key
                     userId: "guestUser",
-                    model: "gpt-4" // Using standard GPT-4 model
+                    model: "gpt-4o" // Using standard GPT-4 model
                 }),
             });
 
@@ -56,6 +56,7 @@ export default function Chat() {
             const decoder = new TextDecoder();
             let done = false;
             let currentMessage = "";
+            let buffer = ""; // Add buffer for incomplete chunks
 
             while (!done && reader) {
                 const { value, done: doneReading } = await reader.read();
@@ -63,46 +64,52 @@ export default function Chat() {
 
                 if (value) {
                     const chunk = decoder.decode(value, { stream: true });
-                    // Split by newlines in case we get multiple events in one chunk
-                    const events = chunk.split('\n').filter(Boolean);
+                    buffer += chunk;
                     
-                    for (const event of events) {
-                        try {
-                            const parsedEvent = JSON.parse(event);
-                            
-                            // Store threadId from the first message
-                            if (parsedEvent.threadId && !threadId) {
-                                setThreadId(parsedEvent.threadId);
-                            }
+                    // Process complete SSE messages
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ""; // Keep the last incomplete line in buffer
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonStr = line.slice(6); // Remove 'data: ' prefix
+                                const parsedEvent = JSON.parse(jsonStr);
+                                
+                                // Store threadId from the first message
+                                if (parsedEvent.threadId && !threadId) {
+                                    setThreadId(parsedEvent.threadId);
+                                }
 
-                            if (parsedEvent.type === "textCreated") {
-                                currentMessage = parsedEvent.value;
-                                setMessages(prevMessages => [
-                                    ...prevMessages,
-                                    { id: Date.now().toString(), content: currentMessage, role: "assistant" }
-                                ]);
-                            } else if (parsedEvent.type === "textDelta") {
-                                currentMessage += parsedEvent.value;
-                                setMessages(prevMessages => {
-                                    const newMessages = [...prevMessages];
-                                    if (newMessages.length > 0) {
-                                        newMessages[newMessages.length - 1].content = currentMessage;
-                                    }
-                                    return newMessages;
-                                });
+                                if (parsedEvent.type === "textCreated") {
+                                    currentMessage = parsedEvent.value?.text || parsedEvent.value;
+                                    setMessages(prevMessages => [
+                                        ...prevMessages,
+                                        { id: Date.now().toString(), content: currentMessage, role: "assistant" }
+                                    ]);
+                                } else if (parsedEvent.type === "textDelta") {
+                                    currentMessage += parsedEvent.value?.text || parsedEvent.value;
+                                    setMessages(prevMessages => {
+                                        const newMessages = [...prevMessages];
+                                        if (newMessages.length > 0) {
+                                            newMessages[newMessages.length - 1].content = currentMessage;
+                                        }
+                                        return newMessages;
+                                    });
+                                }
+                            } catch (e) {
+                                console.error("Error parsing SSE event:", e, "Raw line:", line);
                             }
-                        } catch (e) {
-                            console.error("Error parsing event:", e);
                         }
                     }
                 }
             }
         } catch (error) {
             console.error("Error sending message:", error);
-            setError("Error: Failed to send message");
+            setError(error instanceof Error ? error.message : "An error occurred");
             setMessages(prevMessages => [
                 ...prevMessages,
-                { id: Date.now().toString(), content: "Error: Failed to send message", role: "system" }
+                { id: Date.now().toString(), content: error instanceof Error ? error.message : "An error occurred", role: "system" }
             ]);
         }
     };

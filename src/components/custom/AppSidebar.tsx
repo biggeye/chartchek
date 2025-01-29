@@ -1,14 +1,66 @@
 "use client";
 
 import React from 'react';
-import { Sidebar, SidebarHeader, SidebarBody, SidebarSection, SidebarItem } from '@/components//sidebar';
-import { Button } from '@/components//button';
+import { Sidebar, SidebarHeader, SidebarBody, SidebarSection, SidebarFooter } from '@/components/sidebar';
+import { Button } from '@/components/button';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
+import { ChatHistoryList } from './ChatHistoryList';
+import { UserMenu } from '@/components/user-menu';
 
 export interface AppSidebarProps {
   // We'll add props as needed later
 }
 
 export function AppSidebar({}: AppSidebarProps) {
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleNewChat = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.push('/login');
+        return;
+      }
+
+      // Create a new thread via our API endpoint
+      const formData = new FormData();
+      formData.append('message', ' '); // Empty space instead of empty string
+      formData.append('assistantKey', 'tjc');
+      formData.append('model', 'gpt-4o');
+
+      const response = await fetch("/api/tjc", {
+        method: "POST",
+        body: formData,
+        // Prevent Next.js from trying to JSON stringify FormData
+        headers: {
+          Accept: 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(errorText);
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data);
+      
+      // Navigate to the new chat using the thread ID from the saved message
+      if (data.message?.thread_id) {
+        router.push(`/chat/${data.message.thread_id}`);
+      } else {
+        throw new Error("Failed to create chat thread");
+      }
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+      // You might want to show an error toast or message here
+    }
+  };
+
   return (
     <Sidebar className="w-64 border-r border-zinc-950/5">
       <SidebarHeader>
@@ -16,6 +68,7 @@ export function AppSidebar({}: AppSidebarProps) {
           <Button
             className="w-full"
             color="blue"
+            onClick={handleNewChat}
           >
             <PlusIcon className="w-4 h-4 mr-2" />
             New Chat
@@ -25,25 +78,13 @@ export function AppSidebar({}: AppSidebarProps) {
       
       <SidebarBody>
         <SidebarSection>
-          {/* Example chat history items */}
-          <div className="space-y-1">
-            <button className="w-full px-2 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
-              Previous Chat 1
-            </button>
-            <button className="w-full px-2 py-1.5 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
-              Previous Chat 2
-            </button>
-          </div>
+          <ChatHistoryList />
         </SidebarSection>
       </SidebarBody>
-    </Sidebar>
-  );
-}
 
-function PlusIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...props}>
-      <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+      <SidebarFooter>
+        <UserMenu variant="sidebar" />
+      </SidebarFooter>
+    </Sidebar>
   );
 }

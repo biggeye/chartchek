@@ -8,9 +8,10 @@ interface ChatInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSend: () => void;
+  disabled: boolean;
 }
 
-export default function ChatInput({ value, onChange, onSend }: ChatInputProps) {
+export default function ChatInput({ value, onChange, onSend, disabled }: ChatInputProps) {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -29,11 +30,12 @@ export default function ChatInput({ value, onChange, onSend }: ChatInputProps) {
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             className="flex-1"
+            disabled={disabled}
           />
         </InputGroup>
         <Button
           onClick={onSend}
-          disabled={!value.trim()}
+          disabled={disabled || !value.trim()}
           color="blue"
         >
           Send

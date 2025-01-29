@@ -33,10 +33,10 @@ export const assistantRoster = [
     },
     {
       key: "dhcs",
-      name: "DHCS Specialist",
+      name: "DHCS Compliance Expert",
       instructions: "You are a specialized assistant for answering DHCS compliance questions.",
       tools: [{ type: "file_search" }] as AssistantCreateParams['tools'],
-      model: "gpt-4"
+      model: "gpt-4o"
     },
   ];
   
